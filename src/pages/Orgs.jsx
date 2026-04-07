@@ -8,29 +8,30 @@ const US_STATES = [
   "VA","WA","WV","WI","WY",
 ];
 
-function Badge({ children, color = "slate" }) {
-  const map = {
-    slate:   "bg-slate-100 text-slate-600",
-    green:   "bg-emerald-100 text-emerald-700",
-    amber:   "bg-amber-100 text-amber-700",
-  };
+function RevenueBar({ revenue }) {
+  const max = 5_000_000;
+  const pct = Math.min(100, Math.round((revenue / max) * 100));
   return (
-    <span className={`px-2 py-0.5 rounded text-xs font-medium ${map[color]}`}>
-      {children}
-    </span>
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <div style={{ width: 48, height: 3, background: "#1e2d3d", borderRadius: 2 }}>
+        <div style={{ width: `${pct}%`, height: "100%", background: "var(--gold)", borderRadius: 2, opacity: 0.8 }} />
+      </div>
+      <span className="mono" style={{ fontSize: 12, color: "var(--text-primary)" }}>
+        {revenue ? `$${(revenue / 1_000_000).toFixed(1)}M` : "—"}
+      </span>
+    </div>
   );
 }
 
 export default function Orgs() {
-  const [orgs, setOrgs]       = useState([]);
-  const [total, setTotal]     = useState(0);
-  const [page, setPage]         = useState(1);
+  const [orgs, setOrgs]             = useState([]);
+  const [total, setTotal]           = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(false);
-
-  const [search, setSearch]   = useState("");
-  const [state, setState]     = useState("");
-  const [property, setProperty] = useState("");
+  const [page, setPage]             = useState(1);
+  const [loading, setLoading]       = useState(false);
+  const [search, setSearch]         = useState("");
+  const [state, setState]           = useState("");
+  const [property, setProperty]     = useState("");
 
   const fetchOrgs = useCallback(() => {
     setLoading(true);
@@ -41,38 +42,43 @@ export default function Orgs() {
 
     getOrgs(params)
       .then((r) => {
-        setOrgs(r.data.results ?? r.data);
-        setTotal(r.data.count ?? 0);
-        setTotalPages(r.data.total_pages ?? 1);
+        const data = r.data || {};
+        setOrgs(Array.isArray(data.results) ? data.results : Array.isArray(data) ? data : []);
+        setTotal(data.count ?? 0);
+        setTotalPages(data.total_pages ?? 1);
       })
-      .catch(console.error)
+      .catch(() => { setOrgs([]); })
       .finally(() => setLoading(false));
   }, [page, search, state, property]);
 
   useEffect(() => { fetchOrgs(); }, [fetchOrgs]);
 
-  const fmt = (n) => n ? `$${(n / 1_000_000).toFixed(1)}M` : "—";
-
   return (
-    <div className="p-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Organizations</h1>
-        <p className="text-slate-500 text-sm mt-1">{total.toLocaleString()} nonprofits in database</p>
+    <div style={{ padding: "40px 48px" }}>
+      {/* Header */}
+      <div style={{ marginBottom: 28 }}>
+        <h1 className="syne" style={{ fontSize: 24, fontWeight: 700, margin: 0, letterSpacing: "-0.03em" }}>
+          Organizations
+        </h1>
+        <p className="mono" style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 6, letterSpacing: "0.04em" }}>
+          {total.toLocaleString()} nonprofits in database
+        </p>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3 mb-6">
+      <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
         <input
           type="text"
-          placeholder="Search by name or EIN…"
+          placeholder="Search name or EIN…"
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          className="border border-slate-300 rounded-lg px-3 py-2 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-brand-500"
+          className="pill-input"
+          style={{ width: 240 }}
         />
         <select
           value={state}
           onChange={(e) => { setState(e.target.value); setPage(1); }}
-          className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+          className="pill-input"
         >
           <option value="">All states</option>
           {US_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -80,60 +86,84 @@ export default function Orgs() {
         <select
           value={property}
           onChange={(e) => { setProperty(e.target.value); setPage(1); }}
-          className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+          className="pill-input"
         >
           <option value="">Property: any</option>
-          <option value="yes">Has property</option>
+          <option value="yes">Has property ◆</option>
           <option value="no">No property</option>
         </select>
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-50 border-b border-slate-200">
+      <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, overflow: "hidden" }}>
+        <table className="data-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
             <tr>
-              <th className="text-left px-4 py-3 font-semibold text-slate-600">Organization</th>
-              <th className="text-left px-4 py-3 font-semibold text-slate-600">Location</th>
-              <th className="text-right px-4 py-3 font-semibold text-slate-600">Revenue</th>
-              <th className="text-center px-4 py-3 font-semibold text-slate-600">Contacts</th>
-              <th className="text-center px-4 py-3 font-semibold text-slate-600">Property</th>
-              <th className="text-left px-4 py-3 font-semibold text-slate-600">Website</th>
+              <th style={{ textAlign: "left" }}>Organization</th>
+              <th style={{ textAlign: "left" }}>Location</th>
+              <th style={{ textAlign: "left" }}>Revenue</th>
+              <th style={{ textAlign: "center" }}>Contacts</th>
+              <th style={{ textAlign: "center" }}>Property</th>
+              <th style={{ textAlign: "left" }}>Website</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody>
             {loading ? (
-              <tr><td colSpan={6} className="text-center py-12 text-slate-400">Loading…</td></tr>
+              <tr>
+                <td colSpan={6} style={{ textAlign: "center", padding: 40 }}>
+                  <span className="mono" style={{ fontSize: 11, color: "var(--text-muted)" }}>Loading…</span>
+                </td>
+              </tr>
             ) : orgs.length === 0 ? (
-              <tr><td colSpan={6} className="text-center py-12 text-slate-400">No organizations found.</td></tr>
+              <tr>
+                <td colSpan={6} style={{ textAlign: "center", padding: 48 }}>
+                  <p className="mono" style={{ fontSize: 11, color: "var(--text-muted)" }}>No organizations yet</p>
+                  <p style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 8 }}>Run Stage 1 — Discover from the Pipeline page</p>
+                </td>
+              </tr>
             ) : orgs.map((org) => (
-              <tr key={org.id} className="hover:bg-slate-50 transition-colors">
-                <td className="px-4 py-3">
-                  <p className="font-medium text-slate-800 truncate max-w-[260px]">{org.name}</p>
-                  <p className="text-xs text-slate-400">EIN {org.ein}</p>
+              <tr key={org.ein}>
+                <td>
+                  <p style={{ fontWeight: 500, color: "var(--text-primary)", fontSize: 13, maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {org.name}
+                  </p>
+                  <p className="mono" style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 2 }}>
+                    {org.ein}
+                  </p>
                 </td>
-                <td className="px-4 py-3 text-slate-600">{org.city}, {org.state}</td>
-                <td className="px-4 py-3 text-right font-medium text-slate-800">{fmt(org.revenue)}</td>
-                <td className="px-4 py-3 text-center">
-                  <Badge color={org.contact_count > 0 ? "green" : "slate"}>
+                <td>
+                  <span className="mono" style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+                    {org.city ? `${org.city}, ` : ""}{org.state}
+                  </span>
+                </td>
+                <td><RevenueBar revenue={org.revenue} /></td>
+                <td style={{ textAlign: "center" }}>
+                  <span className="badge" style={{
+                    background: org.contact_count > 0 ? "rgba(0,212,170,0.12)" : "rgba(30,45,61,0.6)",
+                    color: org.contact_count > 0 ? "var(--emerald)" : "var(--text-muted)",
+                  }}>
                     {org.contact_count}
-                  </Badge>
+                  </span>
                 </td>
-                <td className="px-4 py-3 text-center">
-                  {org.has_property ? <Badge color="amber">Yes</Badge> : <span className="text-slate-300">—</span>}
+                <td style={{ textAlign: "center" }}>
+                  {org.has_property ? (
+                    <span className="badge" style={{ background: "rgba(240,165,0,0.12)", color: "var(--gold)" }}>◆</span>
+                  ) : (
+                    <span className="mono" style={{ fontSize: 11, color: "#1e2d3d" }}>—</span>
+                  )}
                 </td>
-                <td className="px-4 py-3">
+                <td>
                   {org.website ? (
                     <a
                       href={org.website}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-brand-600 hover:underline text-xs truncate block max-w-[160px]"
+                      style={{ fontSize: 11, color: "var(--text-secondary)", textDecoration: "none", fontFamily: "'IBM Plex Mono', monospace", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}
                     >
-                      {org.website.replace(/^https?:\/\/(www\.)?/, "")}
+                      {org.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}
                     </a>
                   ) : (
-                    <span className="text-slate-300 text-xs">—</span>
+                    <span className="mono" style={{ fontSize: 11, color: "#1e2d3d" }}>—</span>
                   )}
                 </td>
               </tr>
@@ -142,26 +172,17 @@ export default function Orgs() {
         </table>
 
         {/* Pagination */}
-        <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 bg-slate-50">
-          <p className="text-xs text-slate-500">
-            Page {page} · {total.toLocaleString()} total
-          </p>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="px-3 py-1 text-xs border border-slate-300 rounded-lg disabled:opacity-40 hover:bg-slate-100"
-            >
-              Prev
-            </button>
-            <span className="px-3 py-1 text-xs text-slate-500">{page} / {totalPages}</span>
-            <button
-              onClick={() => setPage((p) => p + 1)}
-              disabled={page >= totalPages}
-              className="px-3 py-1 text-xs border border-slate-300 rounded-lg disabled:opacity-40 hover:bg-slate-100"
-            >
-              Next
-            </button>
+        <div style={{
+          display: "flex", justifyContent: "space-between", alignItems: "center",
+          padding: "12px 16px", borderTop: "1px solid var(--border)",
+          background: "#0a0e17",
+        }}>
+          <span className="mono" style={{ fontSize: 11, color: "var(--text-secondary)" }}>
+            {total.toLocaleString()} total · page {page} of {totalPages}
+          </span>
+          <div style={{ display: "flex", gap: 6 }}>
+            <button className="btn-ghost" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>← prev</button>
+            <button className="btn-ghost" onClick={() => setPage((p) => p + 1)} disabled={page >= totalPages}>next →</button>
           </div>
         </div>
       </div>
