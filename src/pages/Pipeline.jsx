@@ -53,12 +53,23 @@ function fmtDur(s) {
   return `${Math.floor(s/3600)}h ${Math.floor((s%3600)/60)}m`;
 }
 
+function fmtElapsed(iso) {
+  if (!iso) return "";
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return "";
+  const sec = Math.max(0, Math.floor((Date.now() - t) / 1000));
+  if (sec < 60) return `${sec}s`;
+  if (sec < 3600) return `${Math.floor(sec / 60)}m ${sec % 60}s`;
+  return `${Math.floor(sec / 3600)}h ${Math.floor((sec % 3600) / 60)}m`;
+}
+
 export default function Pipeline() {
   const [runs, setRuns]         = useState([]);
   const [status, setStatus]     = useState(null);
   const [busy, setBusy]         = useState(false);
   const [error, setError]       = useState("");
   const pollRef                 = useRef(null);
+  const [, setTick]             = useState(0);
 
   // ── Parameters ──────────────────────────────────────────────────────────────
   const [selectedStates, setSelectedStates] = useState(["CA", "TX", "NY", "FL", "IL"]);
@@ -92,9 +103,20 @@ export default function Pipeline() {
 
   useEffect(() => {
     fetchData();
-    pollRef.current = setInterval(fetchData, 5000);
-    return () => clearInterval(pollRef.current);
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
   }, []);
+
+  // Faster polling while a stage is running so Stop / completion show up quickly
+  useEffect(() => {
+    if (pollRef.current) clearInterval(pollRef.current);
+    const ms = status?.status === "running" ? 2000 : 8000;
+    pollRef.current = setInterval(fetchData, ms);
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, [status?.status]);
 
   const handleRun = async () => {
     setError(""); setBusy(true);
@@ -117,6 +139,13 @@ export default function Pipeline() {
 
   const isRunning = status?.status === "running";
 
+  // Re-render once per second while running so elapsed time updates between API polls
+  useEffect(() => {
+    if (!isRunning) return undefined;
+    const id = setInterval(() => setTick((n) => n + 1), 1000);
+    return () => clearInterval(id);
+  }, [isRunning]);
+
   return (
     <div style={{ padding: "40px 48px", maxWidth: 900 }}>
       <div style={{ marginBottom: 32 }}>
@@ -124,7 +153,7 @@ export default function Pipeline() {
           Pipeline Control
         </h1>
         <p style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 6 }}>
-          Configure parameters and trigger data collection. Status polls every 5s.
+          While a stage runs, status refreshes every 2s. If it stays &quot;Running&quot; forever, the worker may have crashed — click Stop, or it auto-clears after ~25 minutes.
         </p>
       </div>
 
@@ -143,7 +172,9 @@ export default function Pipeline() {
               ...(isRunning ? { animation: "pulse-dot 1.4s ease infinite" } : {}),
             }} />
             <span className="mono" style={{ fontSize: 12, color: STATUS_STYLE[status.status]?.color }}>
-              {isRunning ? `Running: ${status.stage}…` : `Last run: ${status.stage} — ${status.status}`}
+              {isRunning
+                ? `Running: ${status.stage} (${fmtElapsed(status.started_at)} elapsed)`
+                : `Last run: ${status.stage} — ${status.status}`}
             </span>
             {status.log && (
               <span className="mono" style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: 8 }}>
