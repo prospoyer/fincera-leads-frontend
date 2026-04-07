@@ -31,11 +31,11 @@ const HIGH_VALUE_PRESETS = {
 };
 
 const STAGES = [
-  { id: "discover", label: "Stage 1 — Discover",      desc: "ProPublica in small chunks (~25 orgs/state per run); repeat to grow the list" },
-  { id: "enrich",   label: "Stage 2 — Enrich",        desc: "IRS 990 XML for up to 25 orgs per run (no contacts); run again for the next batch" },
-  { id: "scrape",   label: "Stage 3 — Scrape",        desc: "Scrape org websites for direct email addresses" },
-  { id: "emails",   label: "Stage 4 — Email Finding", desc: "Pattern-guess emails + SMTP verify each contact" },
-  { id: "export",   label: "Stage 5 — Export",        desc: "Write leads_export.csv sorted by priority + revenue" },
+  { id: "discover", label: "Stage 1 — Discover",      desc: "Up to 25 orgs per run (config + max-orgs slider); repeat to add more" },
+  { id: "enrich",   label: "Stage 2 — Enrich",        desc: "Up to 25 orgs (990 XML) per run; repeat until queue is empty" },
+  { id: "scrape",   label: "Stage 3 — Scrape",        desc: "Up to 25 contacts per run; repeat for the next batch" },
+  { id: "emails",   label: "Stage 4 — Email Finding", desc: "Up to 25 contacts per run; repeat for the next batch" },
+  { id: "export",   label: "Stage 5 — Export",        desc: "Write full leads_export.csv (all rows with email — not batch-limited)" },
 ];
 
 const STATUS_STYLE = {
@@ -64,7 +64,7 @@ export default function Pipeline() {
   const [selectedStates, setSelectedStates] = useState(["CA", "TX", "NY", "FL", "IL"]);
   const [revenueMin, setRevenueMin]         = useState(1_000_000);
   const [revenueMax, setRevenueMax]         = useState(5_000_000);
-  const [maxOrgs, setMaxOrgs]               = useState(500);
+  const [maxOrgs, setMaxOrgs]               = useState(25);
   const [stage, setStage]                   = useState("discover");
   const [stateSearch, setStateSearch]       = useState("");
 
@@ -236,7 +236,7 @@ export default function Pipeline() {
               style={{ width: "100%", accentColor: "var(--gold)" }}
             />
             <p className="mono" style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 4 }}>
-              Set to 0 for unlimited. Smaller runs process faster.
+              Discover cap per run (default 25). Set to 0 to use server default only. Stages 2–4 always batch 25/run on the server.
             </p>
           </div>
         </div>
