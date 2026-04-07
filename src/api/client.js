@@ -18,7 +18,15 @@ export const getContacts     = (params) => api.get("/contacts/", { params });
 export const getContact      = (id)     => api.get(`/contacts/${id}/`);
 export const getPipelineRuns = ()       => api.get("/pipeline/");
 export const getPipelineStatus = ()     => api.get("/pipeline/status/");
-export const triggerPipeline = (stage)  => api.post("/pipeline/trigger/", { stage });
+export const triggerPipeline = (stage, states, revenueMin, revenueMax, maxOrgs) =>
+  api.post("/pipeline/trigger/", {
+    stage,
+    ...(states?.length ? { states } : {}),
+    ...(revenueMin != null ? { revenue_min: revenueMin } : {}),
+    ...(revenueMax != null ? { revenue_max: revenueMax } : {}),
+    ...(maxOrgs ? { max_orgs: maxOrgs } : {}),
+  });
+export const stopPipeline = () => api.post("/pipeline/stop/");
 export const exportCsv       = ()       =>
   `${BASE_URL}/export/`;
 
