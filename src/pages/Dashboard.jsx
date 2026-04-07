@@ -10,7 +10,7 @@ function StatCard({ label, value, sub, accent = false, delay = 0 }) {
       <p className="mono" style={{ fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-secondary)", marginBottom: 10 }}>
         {label}
       </p>
-      <p className="syne mono" style={{
+      <p className="syne" style={{
         fontSize: 32, fontWeight: 700,
         color: accent ? "var(--gold)" : "var(--text-primary)",
         letterSpacing: "-0.02em",
@@ -111,16 +111,20 @@ export default function Dashboard() {
       </div>
 
       {/* Email breakdown */}
-      <div style={{
-        background: "var(--surface)",
-        border: "1px solid var(--border)",
-        borderRadius: 12,
-        padding: "20px 24px",
-        marginBottom: 24,
-        display: "grid",
-        gridTemplateColumns: "repeat(3, 1fr)",
-        gap: 0,
-      }} className="animate-fade-up" style2={{ animationDelay: "200ms" }}>
+      <div
+        className="animate-fade-up"
+        style={{
+          background: "var(--surface)",
+          border: "1px solid var(--border)",
+          borderRadius: 12,
+          padding: "20px 24px",
+          marginBottom: 24,
+          display: "grid",
+          gridTemplateColumns: "repeat(3, 1fr)",
+          gap: 0,
+          animationDelay: "200ms",
+        }}
+      >
         {[
           { label: "Verified (SMTP)",  value: stats.verified_emails, color: "var(--emerald)" },
           { label: "Found on website", value: stats.found_emails,    color: "var(--gold)" },
