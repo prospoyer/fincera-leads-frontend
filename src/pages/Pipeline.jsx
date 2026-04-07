@@ -31,8 +31,8 @@ const HIGH_VALUE_PRESETS = {
 };
 
 const STAGES = [
-  { id: "discover", label: "Stage 1 — Discover",      desc: "Pull orgs from ProPublica API (uses state + revenue filters)" },
-  { id: "enrich",   label: "Stage 2 — Enrich",        desc: "Download IRS 990 XML, extract officer names + compensation" },
+  { id: "discover", label: "Stage 1 — Discover",      desc: "ProPublica in small chunks (~25 orgs/state per run); repeat to grow the list" },
+  { id: "enrich",   label: "Stage 2 — Enrich",        desc: "IRS 990 XML for up to 25 orgs per run (no contacts); run again for the next batch" },
   { id: "scrape",   label: "Stage 3 — Scrape",        desc: "Scrape org websites for direct email addresses" },
   { id: "emails",   label: "Stage 4 — Email Finding", desc: "Pattern-guess emails + SMTP verify each contact" },
   { id: "export",   label: "Stage 5 — Export",        desc: "Write leads_export.csv sorted by priority + revenue" },

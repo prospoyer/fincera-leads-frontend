@@ -63,7 +63,7 @@ export default function Contacts() {
 
   const fetchContacts = useCallback(() => {
     setLoading(true);
-    const params = { page, page_size: 50, ordering: "-priority" };
+    const params = { page, page_size: 25, ordering: "-priority" };
     if (search)         params.search       = search;
     if (emailStatus)    params.email_status = emailStatus;
     if (hasEmail)       params.has_email    = hasEmail === "yes" ? "true" : "false";

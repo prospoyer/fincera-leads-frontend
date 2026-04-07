@@ -35,7 +35,7 @@ export default function Orgs() {
 
   const fetchOrgs = useCallback(() => {
     setLoading(true);
-    const params = { page, page_size: 50 };
+    const params = { page, page_size: 25 };
     if (search)   params.search       = search;
     if (state)    params.state        = state;
     if (property) params.has_property = property === "yes" ? "true" : "false";
